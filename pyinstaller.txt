@@ -1,0 +1,1 @@
+pyinstaller --add-data "Lib\site-packages\cloudscraper;./cloudscraper" hakuneko.py
