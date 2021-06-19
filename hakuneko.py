@@ -1,7 +1,10 @@
-import cloudscraper, json
+import cloudscraper, inquirer, json, os
 from bs4 import BeautifulSoup
 
 class HakuNeko:
+
+    def progress(self, url):
+        print('Currently scraping: '+url)
 
     def url2soup(self, url):
         scraper = cloudscraper.CloudScraper()
@@ -10,8 +13,11 @@ class HakuNeko:
         return soup
 
     def hakuneko(self, comics, extension):
-        f = open('hakuneko.mangas.'+extension, 'w+', encoding='utf8')
+        comics = sorted(comics, key=lambda c: c['title'])
+        f = open('Include\\hakuneko.mangas.'+extension, 'w+', encoding='iso-8859-8')
         f.write(json.dumps(comics))
+        f.close()
+        print('hakuneko.mangas.'+extension+' is in '+os.getcwd()+'\\Include')
 
 class MangaGo:
 
@@ -20,22 +26,20 @@ class MangaGo:
         self.run()
     
     def generate(self):
-        pages = []
         base = 'https://www.mangago.me/list/directory/all/'
         result = None
         while result is None:
             soup = HakuNeko().url2soup(base+'1/')
             div = soup.find('div', {'class': 'pagination'})
             result = div
-        count = int(div['total'])
-        for i in range(count):
-            pages.append(base+str(i+1)+'/')
+        pages = int(div['total'])
+        pages = [base+str(p+1)+'/' for p in list(range(pages))]
         return pages
 
     def scrape(self, pages):
         comics = []
         for page in pages:
-            print('Currently scraping: '+page)
+            HakuNeko().progress(page)
             result = 0
             while result == 0:
                 soup = HakuNeko().url2soup(page)
@@ -43,7 +47,6 @@ class MangaGo:
                 for a in aList:
                     comics.append({'id': a['href'], 'title': a['title']})
                 result = len(aList)
-        comics = sorted(comics, key=lambda c: c['title'])
         return comics
 
     def run(self):
@@ -52,6 +55,8 @@ class MangaGo:
         HakuNeko().hakuneko(comics, 'mangago')
 
 if __name__ == '__main__':
-    source = 'mangago'
-    if source == 'mangago':
+    sources = ['Mangago']
+    question = [inquirer.List('source', message="Select the source to generate hakuneko data", choices=list(sources))]
+    answer = inquirer.prompt(question)
+    if answer['source'] == sources[0]:
         MangaGo()
